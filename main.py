@@ -1,13 +1,12 @@
 from train import train_model, estimate_cost
 from data_utils import get_embeddings, synthesize_database
 from test import evaluate
-from global_variables import date_range
+from global_variables import date_range, frequency_range
 import numpy as np
 
 def main():
     embed_original = get_embeddings() # Considered the query pictures
     embed_data, id_data, date_data, location_data = synthesize_database(embed_original)
-
 
     # Get inputs
     query_image_index = int(input('Select query image index:'))
@@ -18,10 +17,10 @@ def main():
     embed_query = embed_original[query_image_index]
     print(f"Embedding:\n {embed_query}")
 
-    query_date = int(input('Select date:'))
-    if query_date >= date_range:
+    query_date_index = int(input('Select date:')) # this is actually the index of the date for the same person
+    if query_date_index >= frequency_range:
         raise ValueError("date exceed the toal number of dates") 
-
+    label_index = query_image_index * frequency_range + query_date_index
 
     # Estimate cost
     costs = estimate_cost()
@@ -51,7 +50,7 @@ def main():
         location_pred = np.argmax(location_pred, axis = 1)
     location_pred += 1
     print(f'Predicted location is: {location_pred}')
-    print(f'True location is: {location_data[query_image_index]}') # incorrect
+    print(f'True location is: {location_data[label_index]}') # incorrect
 
 
 if __name__ == '__main__':
