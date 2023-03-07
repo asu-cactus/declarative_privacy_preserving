@@ -26,14 +26,13 @@ def main():
     embed_data, id_data, date_data, location_data = synthesize_database(embed_original)
 
     passenger_data = get_passenger_database(embed_original, indices)
-    picture_id = check_passenger_exist(passenger_data, name_query, datebirth, country, picture_id)
-    if picture_id == -1:
+    query_image_index = check_passenger_exist(passenger_data, name_query, datebirth, country, picture_id)
+    if query_image_index == -1:
         raise ValueError("Passenger doesn't exist in the database")
     else:
-        print(f"Picture id: {picture_id}")
+        print(f"query_image_index: {query_image_index}")
     
     # Get inputs to the model
-    query_image_index = picture_id
     
     if query_image_index >= len(embed_original):
         raise ValueError("query image index exceed the total number of pictures") 

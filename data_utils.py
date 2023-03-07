@@ -50,9 +50,9 @@ def check_passenger_exist(
     country,
     picture_id,
 ):
-    for row in passenger_data.iter_rows():
+    for i, row in passenger_data.iterrows():
         if row['id'] == picture_id and row["name"] == name_query and row['dob'] == datebirth and row['country'] == country:
-            return picture_id
+            return i
     return -1
 
 def get_embeddings(
