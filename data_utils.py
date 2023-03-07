@@ -150,3 +150,22 @@ def create_multi_input_trainset(
     X_train = np.concatenate((np.stack(embed_data), date_data_array), axis=1)
     X_train, _ = standardize_input(X_train)
     return (X_train, np.array(id_data), labels)
+
+
+def synthesize_simple_database(embed_original: list[Embedding]):
+    assert frequency_range == 1
+    location_data = [random.randint(1, location_range) for _ in range(len(embed_original))]
+    id_data = list(range(len(location_data)))
+    return (embed_original, id_data, location_data)
+
+def create_simple_dataset(    
+    embed_data: list[Embedding], 
+    id_data: list[int], 
+    location_data: list[int],
+) -> tuple[Embeddings, np.array, np.array]:
+    location_data = np.array(location_data)
+    labels = np.zeros((len(location_data), location_range), dtype=np.int32)
+    labels[np.arange(len(location_data)), location_data - 1] = 1
+
+    X_train, _ = standardize_input(np.stack(embed_data))
+    return (X_train, np.array(id_data), labels)

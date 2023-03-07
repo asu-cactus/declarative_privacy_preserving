@@ -1,14 +1,14 @@
 
-frequency_range = 10
 date_range = 365
 location_range = 20
 
 hidden_units = 500
 
-training_size = 10000
+frequency_range = 1
+training_size = 1000
 
-learning_rate = 0.02
-epochs = 200
+learning_rate = 0.1
+epochs = 100
 
 countries = ['UK', 'US', 'BRZ', 'CHN', 'AU']
 

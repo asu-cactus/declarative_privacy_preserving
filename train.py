@@ -7,6 +7,7 @@ from data_utils import (
     synthesize_database, 
     create_multi_output_trainset,
     create_multi_input_trainset,
+    create_simple_dataset,
     get_embeddings
 )
 from typings import *
@@ -95,30 +96,37 @@ def train_multi_input_model(embed_data, id_data, date_data, location_data):
     # return train(X_train, labels, out_size=location_range, is_privacy_preserve=True, learning_rate=0.002, epochs=100)
 
 
-def train_model(embed_data, id_data, date_data, location_data, user_selection: str = 'multi-input'):
-    if user_selection == 'multi-output':
-        return train_multi_output_model(embed_data, id_data, date_data, location_data)
+def train_simple(embed_data, id_data, location_data):
+    X_train, ids, labels = create_simple_dataset(embed_data, id_data, location_data)
+    print(f'X_train: {X_train.shape}, labels: {labels.shape}')
+    return train(X_train, labels, out_size=location_range , is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
 
+def train_model(embed_data, id_data, date_data, location_data, user_selection: str = 'multi-input'):
+    if date_data is None:
+        return train_simple(embed_data, id_data, location_data)
     else:
-        return train_multi_input_model(embed_data, id_data, date_data, location_data)
+        if user_selection == 'multi-output':
+            return train_multi_output_model(embed_data, id_data, date_data, location_data)
+        else:
+            return train_multi_input_model(embed_data, id_data, date_data, location_data)
 
 
 def estimate_cost() -> tuple[dict]:
     batch_size = 200
-    noise_multiplier = 0.3
+    noise_multiplier = 0.03
     delta = 1e-3
     eps1 = compute_dp_sgd_privacy.compute_dp_sgd_privacy(
         n=training_size,
         batch_size=batch_size,
         noise_multiplier=noise_multiplier,
-        epochs=300,
+        epochs=epochs,
         delta=delta)
     
     eps2 = compute_dp_sgd_privacy.compute_dp_sgd_privacy(
         n=training_size,
         batch_size=batch_size,
         noise_multiplier=noise_multiplier,
-        epochs=200,
+        epochs=epochs,
         delta=delta)
     
     estimated_acc1 = 0.25
