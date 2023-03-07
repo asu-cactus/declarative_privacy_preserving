@@ -1,15 +1,39 @@
 from train import train_model, estimate_cost
-from data_utils import get_embeddings, synthesize_database
+from data_utils import (
+    get_embeddings, 
+    synthesize_database, 
+    get_passenger_database,
+    check_passenger_exist,
+)
 from test import evaluate
 from global_variables import date_range, frequency_range
 import numpy as np
 
+
+
 def main():
-    embed_original = get_embeddings() # Considered the query pictures
+
+    name_query = 'Alice Caine'
+    datebirth = '1980-04-27'
+    country = 'AU'
+    picture_id = 2290 # we can link picture to its id.
+    example_query = f"""
+        SELECT img.date FROM virtual_surveillance_imgs img JOIN passengers ON match (passengers.pic, img) = True 
+        WHERE passengers.name Like '\%{name_query}\%' AND datebirth='{datebirth}' AND country ='{country}'
+    """
+    
+    embed_original, indices = get_embeddings() # Considered the query pictures
     embed_data, id_data, date_data, location_data = synthesize_database(embed_original)
 
-    # Get inputs
-    query_image_index = int(input('Select query image index:'))
+    passenger_data = get_passenger_database(embed_original, indices)
+    picture_id = check_passenger_exist(passenger_data, name_query, datebirth, country, picture_id)
+    if picture_id == -1:
+        raise ValueError("Passenger doesn't exist in the database")
+    else:
+        print(f"Picture id: {picture_id}")
+    
+    # Get inputs to the model
+    query_image_index = picture_id
     
     if query_image_index >= len(embed_original):
         raise ValueError("query image index exceed the total number of pictures") 
@@ -42,7 +66,7 @@ def main():
     if plan_selection == '1':
         location_pred = model.predict(np.expand_dims(embed_original[query_image_index], axis=0))
         location_pred = np.argmax(location_pred, axis = 1)
-        location_pred %= location_pred     
+        location_pred %= location_pred
     elif plan_selection == '2':
         date_encode = np.zeros(date_range, dtype=np.int32)
         input_ = np.concatenate((embed_query, date_encode), axis=0)

@@ -2,26 +2,72 @@ import pickle
 import random
 from sklearn.preprocessing import StandardScaler
 from typings import *
-from global_variables import frequency_range, date_range, location_range, training_size
+from global_variables import frequency_range, date_range, location_range, training_size, countries
+import pandas as pd
+import os
+from datetime import date, timedelta
 
 # Set random seed
 SEED = 1433 
 random.seed(SEED)
 
-# Functions
-def get_embeddings(
-        path: str = 'dataset/embeddings/10K_encodings.pkl', 
-        size: int = None,
-) -> list[Embedding]:
-    embeddings = pickle.load(open(path, 'rb'))
 
-    if size is None:
-        size = training_size // frequency_range
+# Functions
+def get_passenger_database(
+    embed_original: list[Embedding],
+    indices: list[int], 
+    data_path: str = 'dataset/passenger_data/passenger.csv',
+    names_path: str = 'dataset/names/query-names.txt',
+) -> pd.DataFrame:
+    if os.path.exists(data_path):
+        return pd.read_csv(data_path)
+
+    with open(names_path, 'r') as f:
+        names = [name.strip() for name in f.readlines()]
+
+    test_date1, test_date2 = date(1980, 1, 1), date(2000, 1, 1)
+    dates_bet = test_date2 - test_date1
+    total_days = dates_bet.days
+
+    rows = []
+    # Synthesize passenger database
+    for j, index in enumerate(indices):
+        row = {"id": index}
+        row["name"] = names[j] # assume names are distinct
+        row["dob"] = str(test_date1 + timedelta(days=random.randrange(total_days)))  
+        row["country"] = random.choice(countries)
+        # row["embed"] = embed_original[j]
+        rows.append(row)
+    database = pd.DataFrame(rows)
+    database.to_csv(data_path, index=False)
+    print(database)
+    return database
+
+def check_passenger_exist(
+    passenger_data,
+    name_query,
+    datebirth,
+    country,
+    picture_id,
+):
+    for row in passenger_data.iter_rows():
+        if row['id'] == picture_id and row["name"] == name_query and row['dob'] == datebirth and row['country'] == country:
+            return picture_id
+    return -1
+
+def get_embeddings(
+    path: str = 'dataset/embeddings/10K_encodings.pkl', 
+) -> tuple[list[Embedding], list[int]]:
+    embeddings = pickle.load(open(path, 'rb'))
+    size = training_size // frequency_range
     if size > len(embeddings):
         raise ValueError("Size exceed the embeddings size!")
     if size == len(embeddings):
         return embeddings
-    return random.sample(embeddings, size)
+
+    indices = random.sample(range(len(embeddings)), size)
+    embed_original = [embeddings[i] for i in indices]
+    return (embed_original, indices)
 
 def transform_embedding(embedding: Embedding) -> Embedding:
     return embedding
