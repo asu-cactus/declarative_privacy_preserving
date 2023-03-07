@@ -4,7 +4,7 @@ location_range = 20
 
 hidden_units = 500
 
-frequency_range = 1
+frequency_range = 10
 training_size = 1000
 
 learning_rate = 0.1
