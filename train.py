@@ -7,7 +7,7 @@ from data_utils import (
     synthesize_database, 
     create_multi_output_trainset,
     create_multi_input_trainset,
-    create_simple_dataset,
+    create_simple_trainset,
     get_embeddings
 )
 from typings import *
@@ -84,22 +84,24 @@ def train(
 
 
 def train_multi_output_model(embed_data, id_data, date_data, location_data):
-    X_train, ids, labels = create_multi_output_trainset(embed_data, id_data, date_data, location_data)
+    X_train, ids, labels, sc = create_multi_output_trainset(embed_data, id_data, date_data, location_data)
     print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    return train(X_train, labels, out_size=location_range*date_range, is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
-
+    model, eps, X_train, y_train = train(X_train, labels, out_size=location_range*date_range, is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    return (model, eps, X_train, y_train, sc)
 
 def train_multi_input_model(embed_data, id_data, date_data, location_data):
-    X_train, ids, labels =  create_multi_input_trainset(embed_data, id_data, date_data, location_data)
+    X_train, ids, labels, sc =  create_multi_input_trainset(embed_data, id_data, date_data, location_data)
     print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    return train(X_train, labels, out_size=location_range , is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    model, eps, X_train, y_train =  train(X_train, labels, out_size=location_range , is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    return (model, eps, X_train, y_train, sc)
     # return train(X_train, labels, out_size=location_range, is_privacy_preserve=True, learning_rate=0.002, epochs=100)
 
 
 def train_simple(embed_data, id_data, location_data):
-    X_train, ids, labels = create_simple_dataset(embed_data, id_data, location_data)
+    X_train, ids, labels, sc = create_simple_trainset(embed_data, id_data, location_data)
     print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    return train(X_train, labels, out_size=location_range , is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    model, eps, X_train, y_train =  train(X_train, labels, out_size=location_range , is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    return (model, eps, X_train, y_train, sc)
 
 def train_model(embed_data, id_data, date_data, location_data, user_selection: str = 'multi-input'):
     if date_data is None:

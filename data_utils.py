@@ -124,8 +124,8 @@ def create_multi_output_trainset(
     labels = np.zeros((len(id_data), date_range * location_range), dtype=np.int32)
     for id, date, location in zip(id_data, date_data, location_data):
         labels[id, date * location - 1] = 1
-    X_train, _ = standardize_input(np.stack(embed_data))
-    return (X_train, np.array(id_data), labels)
+    X_train, sc = standardize_input(np.stack(embed_data))
+    return (X_train, np.array(id_data), labels, sc)
     
 
 def create_multi_input_trainset(    
@@ -148,8 +148,8 @@ def create_multi_input_trainset(
     else:
         date_data_array = np.expand_dims(date_data, axis=1)
     X_train = np.concatenate((np.stack(embed_data), date_data_array), axis=1)
-    X_train, _ = standardize_input(X_train)
-    return (X_train, np.array(id_data), labels)
+    X_train, sc = standardize_input(X_train)
+    return (X_train, np.array(id_data), labels, sc)
 
 
 def synthesize_simple_database(embed_original: list[Embedding]):
@@ -158,7 +158,7 @@ def synthesize_simple_database(embed_original: list[Embedding]):
     id_data = list(range(len(location_data)))
     return (embed_original, id_data, location_data)
 
-def create_simple_dataset(    
+def create_simple_trainset(    
     embed_data: list[Embedding], 
     id_data: list[int], 
     location_data: list[int],
@@ -167,5 +167,5 @@ def create_simple_dataset(
     labels = np.zeros((len(location_data), location_range), dtype=np.int32)
     labels[np.arange(len(location_data)), location_data - 1] = 1
 
-    X_train, _ = standardize_input(np.stack(embed_data))
-    return (X_train, np.array(id_data), labels)
+    X_train, sc = standardize_input(np.stack(embed_data))
+    return (X_train, np.array(id_data), labels, sc)
