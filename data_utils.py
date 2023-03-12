@@ -120,13 +120,25 @@ def create_multi_output_trainset(
     date_data: list[int], 
     location_data: list[int],
 ) -> tuple[Embeddings, np.array, np.array]:
+    # Need rewrite
+    # labels = np.zeros((len(id_data), date_range * location_range), dtype=np.int32)
+    # for id, date, location in zip(id_data, date_data, location_data):
+    #     labels[id, date * location - 1] = 1
+    # X_train, sc = standardize_input(np.stack(embed_data))
+    # return (X_train, np.array(id_data), labels, sc)
+    length = id_data[-1] + 1
+    labels = np.zeros((length, date_range * location_range), dtype=np.int32)
 
-    labels = np.zeros((len(id_data), date_range * location_range), dtype=np.int32)
-    for id, date, location in zip(id_data, date_data, location_data):
+    prev_id = -1
+    embed_data_dedup = []
+    for id, date, location, embed in zip(id_data, date_data, location_data, embed_data):
         labels[id, date * location - 1] = 1
-    X_train, sc = standardize_input(np.stack(embed_data))
-    return (X_train, np.array(id_data), labels, sc)
-    
+        if id != prev_id:
+            embed_data_dedup.append(embed)
+            prev_id = id
+    assert len(embed_data_dedup) == length
+    X_train, sc = standardize_input(np.stack(embed_data_dedup))
+    return (X_train, np.arange(length), labels, sc)
 
 def create_multi_input_trainset(    
     embed_data: list[Embedding], 
