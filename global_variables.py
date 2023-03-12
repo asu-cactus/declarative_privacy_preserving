@@ -4,12 +4,12 @@ location_range = 20
 
 hidden_units = 1000
 
-frequency_range = 10
-training_size = 1000
+frequency_range = 1
+training_size = 10000
 
 learning_rate = 0.1 # Good for plan 2
 # learning_rate = 0.01
-epochs = 100
+epochs = 50
 
 countries = ['UK', 'US', 'BRZ', 'CHN', 'AU']
 
