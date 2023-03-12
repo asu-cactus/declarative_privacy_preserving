@@ -77,6 +77,7 @@ def main(is_simple_data: bool = False):
     loss, acc = evaluate(model, X_train, y_train)
     print(f"[Evaluation] eps: {eps[0]:.2f}, acc: {acc:.2f}, optimal RDP order: {eps[1]}, loss: {loss:.2f}")
 
+
     # Get prediction (location)
     if plan_selection == '1':
         input_ = scaler.transform(np.expand_dims(embed_original[query_image_index], axis=0))
@@ -100,4 +101,4 @@ def main(is_simple_data: bool = False):
 
 
 if __name__ == '__main__':
-    main()
+    main(is_simple_data=False)

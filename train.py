@@ -38,7 +38,7 @@ def train(
     y_train,
     out_size: int,
     loss_func: str = 'CategoricalCrossentropy',
-    batch_size: int = 200,
+    batch_size: int = 100,
     num_microbatches: int = 1,
     l2_norm_clip: float = 1,
     noise_multiplier: float = 0.03,
@@ -73,6 +73,7 @@ def train(
     # Fit model
     model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
+    print(f'n={X_train.shape[0]}, batch_size={batch_size}')
     eps = compute_dp_sgd_privacy.compute_dp_sgd_privacy(
         n=X_train.shape[0],
         batch_size=batch_size,
@@ -86,7 +87,13 @@ def train(
 def train_multi_output_model(embed_data, id_data, date_data, location_data):
     X_train, ids, labels, sc = create_multi_output_trainset(embed_data, id_data, date_data, location_data)
     print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    model, eps, X_train, y_train = train(X_train, labels, out_size=location_range*date_range, is_privacy_preserve=True, learning_rate=learning_rate, epochs=epochs)
+    model, eps, X_train, y_train = train(
+        X_train, labels, 
+        out_size=location_range*date_range, 
+        loss_func='CategoricalCrossentropy',
+        is_privacy_preserve=True, 
+        learning_rate=learning_rate, 
+        epochs=epochs)
     return (model, eps, X_train, y_train, sc)
 
 def train_multi_input_model(embed_data, id_data, date_data, location_data):
