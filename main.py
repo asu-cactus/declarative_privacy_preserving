@@ -5,13 +5,12 @@ from data_utils import (
     synthesize_simple_database,
     get_passenger_database,
     check_passenger_exist,
+    gaussian_noise_to_embeddings
 )
 from test import evaluate
-from global_variables import date_range, frequency_range
+from global_variables import date_range, frequency_range, sigma, clip, delta
 import numpy as np
-
-def direct_join():
-    pass
+from time import time
 
 def main(is_simple_data: bool = False):
     # name_query = 'Alice Caine'
@@ -19,17 +18,20 @@ def main(is_simple_data: bool = False):
     # country = 'UK'
     # picture_id = 2290 # we can link picture to its id.
 
+    latency = 0.0
+    message = "Elapsed time for query based on privacy preserving is {} seconds"
+
+    # Query
     name_query = 'Peter Derr'
     datebirth = '1982-06-05'
     country = 'UK'
     picture_id = 1099 # we can link picture to its id.
-
-    # Query
+ 
     example_query = f"""
         SELECT img.location FROM virtual_surveillance_imgs img JOIN passengers ON match (passengers.pic, img) = True 
         WHERE passengers.name Like '\%{name_query}\%' AND datebirth='{datebirth}' AND country ='{country}'
     """
-    print(f"Query is:\n{example_query}")
+    print(f"Example query:\n{example_query}")
     
     # Airport dataset
     embed_original, indices = get_embeddings() # Considered the query pictures
@@ -39,10 +41,16 @@ def main(is_simple_data: bool = False):
     else:
         embed_data, id_data, date_data, location_data = synthesize_database(embed_original)
 
+    embed_data = np.stack(embed_data)
+    noisy_embed_data, epsilon = gaussian_noise_to_embeddings(embed_data, sigma, clip, delta)
+
     # Passenger database
     passenger_data = get_passenger_database(embed_original, indices)
+    begin = time()
     query_image_index = check_passenger_exist(passenger_data, name_query, datebirth, country, picture_id)
+    latency += time() - begin
     if query_image_index == -1:
+        print(message.format(latency))
         raise ValueError("Passenger doesn't exist in the database")
     else:
         print(f"query_image_index: {query_image_index}")
@@ -65,40 +73,54 @@ def main(is_simple_data: bool = False):
 
     # Estimate cost
     costs = estimate_cost()
+
     print(f"Plan 1: eps: {costs[0]['eps']}, estimated accuracy: {costs[0]['acc']}")
     print(f"Plan 2: eps: {costs[1]['eps']}, estimated accuracy: {costs[1]['acc']}")
 
-    # Select a plan and train model
+    # Select a plan and train model, hard coded
     plan_selection = input("Select a plan:")
-    user_selection = 'multi-output' if plan_selection == '1' else 'multi-input'
-    model, eps, X_train, y_train, scaler = train_model(embed_data, id_data, date_data, location_data, user_selection=user_selection)
+    embed_input = noisy_embed_data if is_simple_data and plan_selection == '1' else embed_data
+    is_privacy_preserve = False if is_simple_data and plan_selection == '1' else True
+    user_selection = 'multi-output' if plan_selection == '1' and not is_simple_data else 'single-output'
+
+    model, eps, X_train, y_train, scaler = train_model(
+        embed_input, id_data, date_data, location_data, 
+        user_selection=user_selection, 
+        is_privacy_preserve=is_privacy_preserve)
 
     # Evaluate model
     loss, acc = evaluate(model, X_train, y_train)
-    print(f"[Evaluation] eps: {eps[0]:.2f}, acc: {acc:.2f}, optimal RDP order: {eps[1]}, loss: {loss:.2f}")
+    if is_simple_data and plan_selection == '1':
+        print(f"[Evaluation] eps: {epsilon:.2f}, acc: {acc:.2f}, loss: {loss:.2f}")
+    else:
+        print(f"[Evaluation] eps: {eps[0]:.2f}, acc: {acc:.2f}, optimal RDP order: {eps[1]}, loss: {loss:.2f}")
 
 
-    # Get prediction (location)
-    if plan_selection == '1':
-        input_ = scaler.transform(np.expand_dims(embed_original[query_image_index], axis=0))
-        location_pred = model.predict(input_)
-        location_pred = np.argmax(location_pred, axis = 1)
-        location_pred %= location_pred
-    elif plan_selection == '2':
-        if is_simple_data:
-            location_pred = model.predict(scaler.transform(np.expand_dims(embed_query, axis=0)))
-        else:
+    # Get prediction (location), hard coded
+    if is_simple_data:
+        begin = time()
+        location_pred = model.predict(scaler.transform(np.expand_dims(embed_query, axis=0)))
+        location_pred = np.argmax(location_pred, axis=1)
+    else:
+        if plan_selection == '1':
+            input_ = scaler.transform(np.expand_dims(embed_original[query_image_index], axis=0))
+            begin = time()
+            location_pred = np.argmax(model.predict(input_), axis=1)
+            location_pred %= location_pred
+        elif plan_selection == '2':
             date_encode = np.zeros(date_range, dtype=np.int32)
             date_encode[date_data[label_index] - 1] = 1
             input_ = np.concatenate((embed_query, date_encode), axis=0)
             input_ = scaler.transform(np.expand_dims(input_, axis=0))
-            location_pred = model.predict(input_)
-        location_pred = np.argmax(location_pred, axis = 1)
+            begin = time()
+            location_pred = np.argmax(model.predict(input_), axis=1)
 
     location_pred += 1
+    latency += time() - begin
+    print(message.format(latency))
     print(f'Predicted location is: {location_pred}')
-    print(f'Ground truth location is: {truth_label}') 
-
+    print(f'Ground truth location is: {truth_label}')
+    
 
 if __name__ == '__main__':
-    main(is_simple_data=False)
+    main(is_simple_data=True)

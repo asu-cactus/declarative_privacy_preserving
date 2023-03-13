@@ -1,11 +1,13 @@
 import pickle
 import random
 from sklearn.preprocessing import StandardScaler
-from typings import *
+from typings import (Embedding, Embeddings)
 from global_variables import frequency_range, date_range, location_range, training_size, countries
 import pandas as pd
+import numpy as np
 import os
 from datetime import date, timedelta
+import math
 
 # Set random seed
 SEED = 1433 
@@ -115,7 +117,7 @@ def standardize_input(X_train: Embeddings) -> tuple[Embeddings, StandardScaler]:
     return (sc.transform(X_train), sc)
 
 def create_multi_output_trainset(
-    embed_data: list[Embedding], 
+    embed_data: Embeddings, 
     id_data: list[int], 
     date_data: list[int], 
     location_data: list[int],
@@ -124,7 +126,7 @@ def create_multi_output_trainset(
     # labels = np.zeros((len(id_data), date_range * location_range), dtype=np.int32)
     # for id, date, location in zip(id_data, date_data, location_data):
     #     labels[id, date * location - 1] = 1
-    # X_train, sc = standardize_input(np.stack(embed_data))
+    # X_train, sc = standardize_input(embed_data)
     # return (X_train, np.array(id_data), labels, sc)
     length = id_data[-1] + 1
     labels = np.zeros((length, date_range * location_range), dtype=np.int32)
@@ -141,7 +143,7 @@ def create_multi_output_trainset(
     return (X_train, np.arange(length), labels, sc)
 
 def create_multi_input_trainset(    
-    embed_data: list[Embedding], 
+    embed_data: Embeddings, 
     id_data: list[int], 
     date_data: list[int], 
     location_data: list[int],
@@ -159,7 +161,7 @@ def create_multi_input_trainset(
         date_data_array[np.arange(len(date_data)), date_data - 1] = 1
     else:
         date_data_array = np.expand_dims(date_data, axis=1)
-    X_train = np.concatenate((np.stack(embed_data), date_data_array), axis=1)
+    X_train = np.concatenate((embed_data, date_data_array), axis=1)
     X_train, sc = standardize_input(X_train)
     return (X_train, np.array(id_data), labels, sc)
 
@@ -171,7 +173,7 @@ def synthesize_simple_database(embed_original: list[Embedding]):
     return (embed_original, id_data, location_data)
 
 def create_simple_trainset(    
-    embed_data: list[Embedding], 
+    embed_data: Embeddings, 
     id_data: list[int], 
     location_data: list[int],
 ) -> tuple[Embeddings, np.array, np.array]:
@@ -179,5 +181,22 @@ def create_simple_trainset(
     labels = np.zeros((len(location_data), location_range), dtype=np.int32)
     labels[np.arange(len(location_data)), location_data - 1] = 1
 
-    X_train, sc = standardize_input(np.stack(embed_data))
+    X_train, sc = standardize_input(embed_data)
     return (X_train, np.array(id_data), labels, sc)
+
+
+def gaussian_noise_to_embeddings(
+    embeddings: Embeddings,
+    sigma: float,
+    clip: float,
+    delta: float,
+) -> tuple[Embeddings, float]:
+    # Add gaussian noise
+    noisy_embeds = np.clip(embeddings, -abs(clip), abs(clip))
+    gaussian_noise = sigma * np.random.randn(*embeddings.shape)
+    noisy_embeds += gaussian_noise
+
+    # Compute epsilon (privacy budget)
+    l2_sensitivity = math.sqrt(embeddings.shape[1] * (2 * abs(clip)) ** 2)
+    epsilon = math.sqrt(2 * math.log(1.25 / delta)) * l2_sensitivity / sigma
+    return (noisy_embeds, epsilon)
