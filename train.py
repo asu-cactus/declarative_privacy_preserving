@@ -1,12 +1,23 @@
 import tensorflow as tf
 from modeling import MySequentialModel, CrossProductOutputModel
-from global_variables import date_range, location_range, training_size, learning_rate, epochs
+from global_variables import (
+    date_range, 
+    location_range, 
+    training_size, 
+    learning_rate, 
+    epochs, 
+    l2_norm_clip,
+    noise_multiplier,
+    batch_size,
+    sigma, clip, delta,
+)
 import tensorflow_privacy
 from tensorflow_privacy.privacy.analysis import compute_dp_sgd_privacy
 from data_utils import (
     create_multi_output_trainset,
     create_multi_input_trainset,
     create_simple_trainset,
+    compute_privacy_budget,
 )
 from typings import *
 from global_variables import date_range, location_range, delta
@@ -17,12 +28,7 @@ def train(
     y_train,
     out_size: int,
     loss_func: str = 'CategoricalCrossentropy',
-    batch_size: int = 100,
     num_microbatches: int = 1,
-    l2_norm_clip: float = 1,
-    noise_multiplier: float = 0.03,
-    learning_rate: float = 0.02,
-    epochs: int = 200,
     is_privacy_preserve: bool = True,
 ):
     if batch_size % num_microbatches != 0:
@@ -71,9 +77,7 @@ def train_multi_output_model(embed_data, id_data, date_data, location_data, is_p
         X_train, y_train, 
         out_size=location_range*date_range, 
         loss_func='BinaryCrossentropy',
-        is_privacy_preserve=is_privacy_preserve, 
-        learning_rate=learning_rate, 
-        epochs=epochs)
+        is_privacy_preserve=is_privacy_preserve)
     return (model, eps, X_train, y_train, sc)
 
 def train_multi_input_model(embed_data, id_data, date_data, location_data, is_privacy_preserve):
@@ -83,28 +87,22 @@ def train_multi_input_model(embed_data, id_data, date_data, location_data, is_pr
         X_train, y_train, 
         out_size=location_range, 
         loss_func='CategoricalCrossentropy',
-        is_privacy_preserve=is_privacy_preserve, 
-        learning_rate=learning_rate, 
-        epochs=epochs)
+        is_privacy_preserve=is_privacy_preserve)
     return (model, eps, X_train, y_train, sc)
-    # return train(X_train, labels, out_size=location_range, is_privacy_preserve=True, learning_rate=0.002, epochs=100)
-
 
 def train_simple(
     embed_data: Embeddings, 
     id_data: list[int], 
     location_data: list[int], 
     is_privacy_preserve: bool,
-) -> tuple[TFModel, list[int], Embeddings, np.array, StandardScaler]:
+) -> tuple[TFModel, tuple[int], Embeddings, np.array, StandardScaler]:
     X_train, ids, y_train, sc = create_simple_trainset(embed_data, id_data, location_data)
     print(f'X_train: {X_train.shape}, labels: {y_train.shape}')
     model, eps =  train(
         X_train, y_train, 
         out_size=location_range,
         loss_func='CategoricalCrossentropy',
-        is_privacy_preserve=is_privacy_preserve, 
-        learning_rate=learning_rate,
-        epochs=epochs)
+        is_privacy_preserve=is_privacy_preserve)
     return (model, eps, X_train, y_train, sc)
 
 def train_model(embed_data, id_data, date_data, location_data, user_selection, is_privacy_preserve):
@@ -118,15 +116,7 @@ def train_model(embed_data, id_data, date_data, location_data, user_selection, i
 
 
 def estimate_cost() -> tuple[dict]:
-    batch_size = 100
-    noise_multiplier = 0.03
-    eps1 = compute_dp_sgd_privacy.compute_dp_sgd_privacy(
-        n=training_size,
-        batch_size=batch_size,
-        noise_multiplier=noise_multiplier,
-        epochs=epochs,
-        delta=delta)
-    
+    eps1 = compute_privacy_budget(128, clip, delta, sigma) 
     eps2 = compute_dp_sgd_privacy.compute_dp_sgd_privacy(
         n=training_size,
         batch_size=batch_size,
@@ -134,8 +124,8 @@ def estimate_cost() -> tuple[dict]:
         epochs=epochs,
         delta=delta)
     
-    estimated_acc1 = 0.25
-    estimated_acc2 = 0.45
+    estimated_acc1 = 0.94
+    estimated_acc2 = 0.99
     return (
         {"eps": eps1, "acc": estimated_acc1},
-        {"eps": eps2, "acc": estimated_acc2})
+        {"eps": eps2[0], "acc": estimated_acc2})

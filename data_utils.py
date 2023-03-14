@@ -184,6 +184,11 @@ def create_simple_trainset(
     return (X_train, np.array(id_data), labels, sc)
 
 
+def compute_privacy_budget(dims, clip, delta, sigma):
+    l2_sensitivity = math.sqrt(dims * (2 * abs(clip)) ** 2)
+    epsilon = math.sqrt(2 * math.log(1.25 / delta)) * l2_sensitivity / sigma
+    return epsilon
+
 def gaussian_noise_to_embeddings(
     embeddings: Embeddings,
     sigma: float,
@@ -195,7 +200,5 @@ def gaussian_noise_to_embeddings(
     gaussian_noise = sigma * np.random.randn(*embeddings.shape)
     noisy_embeds += gaussian_noise
 
-    # Compute epsilon (privacy budget)
-    l2_sensitivity = math.sqrt(embeddings.shape[1] * (2 * abs(clip)) ** 2)
-    epsilon = math.sqrt(2 * math.log(1.25 / delta)) * l2_sensitivity / sigma
+    epsilon = compute_privacy_budget(embeddings.shape[1], clip, delta, sigma)
     return (noisy_embeds, epsilon)
