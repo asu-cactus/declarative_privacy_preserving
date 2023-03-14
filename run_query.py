@@ -79,7 +79,7 @@ if __name__ == '__main__':
     name_query = 'Peter Derr'
     datebirth = '1982-06-05'
     country = 'UK'
-    picture_id = 1099 # we can link picture to its id.
+    picture_id = 18 # we can link picture to its id.
     location = query_location(name_query, datebirth, country, is_noisy=False)
     print("Location queried through embedding matching:", location)
     print("\n\n")

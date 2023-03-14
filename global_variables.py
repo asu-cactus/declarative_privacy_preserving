@@ -5,13 +5,13 @@ location_range = 20
 hidden_units = 500
 
 frequency_range = 1
-training_size = 1100
+training_size = 1000
 
 learning_rate = 0.1
 
 epochs = 80
 
-sigma = 0.7
+sigma = 0.01
 clip = 0.5
 delta = 1e-5
 

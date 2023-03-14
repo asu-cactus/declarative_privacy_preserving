@@ -17,7 +17,6 @@ random.seed(SEED)
 # Functions
 def get_passenger_database(
     embed_original: list[Embedding],
-    indices: list[int], 
     data_path: str = 'dataset/passenger_data/passenger.csv',
     names_path: str = 'dataset/names/query-names.txt',
 ) -> pd.DataFrame:
@@ -33,12 +32,12 @@ def get_passenger_database(
 
     rows = []
     # Synthesize passenger database
-    for j, index in enumerate(indices):
+    for index in range(len(embed_original)):
         row = {"id": index}
-        row["name"] = names[j] # assume names are distinct
+        row["name"] = names[index] # assume names are distinct
         row["dob"] = str(test_date1 + timedelta(days=random.randrange(total_days)))  
         row["country"] = random.choice(countries)
-        # row["embed"] = embed_original[j]
+        # row["embed"] = embed_original[index]
         rows.append(row)
     database = pd.DataFrame(rows)
     database.to_csv(data_path, index=False)

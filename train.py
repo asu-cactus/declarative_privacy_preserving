@@ -10,26 +10,7 @@ from data_utils import (
 )
 from typings import *
 from global_variables import date_range, location_range, delta
-
-
-# def train_model():
-#     embed_data, id_data, date_data, location_data = synthesize_database()
-#     y_enc = to_categorical(id_data)       
-#     X_train = standardize_input(np.stack(embed_data))
-#     model = MySequentialModel(out_size=len(set(id_data)))
-#     train(model, X_train,  y_enc)
-
-
-# def standardize_input(X_train: Embeddings) -> Embeddings:
-#     sc = StandardScaler()
-#     return sc.fit_transform(X_train)
-
-
-# def train_multi_output_model(embed_original):
-#     X_train, ids, labels = create_multi_output_trainset(*synthesize_database(embed_original))
-#     print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-#     model = train(X_train, labels, loss_func='BinaryCrossentropy', is_privacy_preserve=True)
-#     return model
+from sklearn.preprocessing import StandardScaler
 
 def train(
     X_train, 
@@ -67,6 +48,7 @@ def train(
         model.compile(optimizer=optimizer, loss=loss, metrics=[tf.keras.metrics.BinaryAccuracy()])
     else:
         raise ValueError
+
     
     # Fit model
     model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
@@ -79,14 +61,14 @@ def train(
         epochs=epochs,
         delta=delta)
     
-    return (model, eps, X_train, y_train)
+    return (model, eps)
 
 
 def train_multi_output_model(embed_data, id_data, date_data, location_data, is_privacy_preserve):
-    X_train, ids, labels, sc = create_multi_output_trainset(embed_data, id_data, date_data, location_data)
-    print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    model, eps, X_train, y_train = train(
-        X_train, labels, 
+    X_train, ids, y_train, sc = create_multi_output_trainset(embed_data, id_data, date_data, location_data)
+    print(f'X_train: {X_train.shape}, labels: {y_train.shape}')
+    model, eps = train(
+        X_train, y_train, 
         out_size=location_range*date_range, 
         loss_func='BinaryCrossentropy',
         is_privacy_preserve=is_privacy_preserve, 
@@ -95,10 +77,10 @@ def train_multi_output_model(embed_data, id_data, date_data, location_data, is_p
     return (model, eps, X_train, y_train, sc)
 
 def train_multi_input_model(embed_data, id_data, date_data, location_data, is_privacy_preserve):
-    X_train, ids, labels, sc =  create_multi_input_trainset(embed_data, id_data, date_data, location_data)
-    print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    model, eps, X_train, y_train =  train(
-        X_train, labels, 
+    X_train, ids, y_train, sc =  create_multi_input_trainset(embed_data, id_data, date_data, location_data)
+    print(f'X_train: {X_train.shape}, labels: {y_train.shape}')
+    model, eps =  train(
+        X_train, y_train, 
         out_size=location_range, 
         loss_func='CategoricalCrossentropy',
         is_privacy_preserve=is_privacy_preserve, 
@@ -108,11 +90,16 @@ def train_multi_input_model(embed_data, id_data, date_data, location_data, is_pr
     # return train(X_train, labels, out_size=location_range, is_privacy_preserve=True, learning_rate=0.002, epochs=100)
 
 
-def train_simple(embed_data, id_data, location_data, is_privacy_preserve):
-    X_train, ids, labels, sc = create_simple_trainset(embed_data, id_data, location_data)
-    print(f'X_train: {X_train.shape}, labels: {labels.shape}')
-    model, eps, X_train, y_train =  train(
-        X_train, labels, 
+def train_simple(
+    embed_data: Embeddings, 
+    id_data: list[int], 
+    location_data: list[int], 
+    is_privacy_preserve: bool,
+) -> tuple[TFModel, list[int], Embeddings, np.array, StandardScaler]:
+    X_train, ids, y_train, sc = create_simple_trainset(embed_data, id_data, location_data)
+    print(f'X_train: {X_train.shape}, labels: {y_train.shape}')
+    model, eps =  train(
+        X_train, y_train, 
         out_size=location_range,
         loss_func='CategoricalCrossentropy',
         is_privacy_preserve=is_privacy_preserve, 

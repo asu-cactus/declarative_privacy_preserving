@@ -5,7 +5,8 @@ from data_utils import (
     synthesize_simple_database,
     get_passenger_database,
     check_passenger_exist,
-    gaussian_noise_to_embeddings
+    gaussian_noise_to_embeddings,
+    create_simple_trainset
 )
 from test import evaluate
 from global_variables import date_range, frequency_range, sigma, clip, delta
@@ -25,7 +26,7 @@ def main(is_simple_data: bool = False):
     name_query = 'Peter Derr'
     datebirth = '1982-06-05'
     country = 'UK'
-    picture_id = 1099 # we can link picture to its id.
+    picture_id = 18 # we can link picture to its id.
  
     example_query = f"""
         SELECT img.location FROM virtual_surveillance_imgs img JOIN passengers ON match (passengers.pic, img) = True 
@@ -45,7 +46,7 @@ def main(is_simple_data: bool = False):
     noisy_embed_data, epsilon = gaussian_noise_to_embeddings(embed_data, sigma, clip, delta)
 
     # Passenger database
-    passenger_data = get_passenger_database(embed_original, indices)
+    passenger_data = get_passenger_database(embed_original)
     begin = time()
     query_image_index = check_passenger_exist(passenger_data, name_query, datebirth, country, picture_id)
     latency += time() - begin
@@ -89,10 +90,14 @@ def main(is_simple_data: bool = False):
         is_privacy_preserve=is_privacy_preserve)
 
     # Evaluate model
-    loss, acc = evaluate(model, X_train, y_train)
+    print('\n\nEvaluation:')
+    
     if is_simple_data and plan_selection == '1':
+        X_eval, ids, y_train, scaler = create_simple_trainset(embed_data, id_data, location_data)
+        loss, acc = evaluate(model, X_eval, y_train)
         print(f"[Evaluation] eps: {epsilon:.2f}, acc: {acc:.2f}, loss: {loss:.2f}")
     else:
+        loss, acc = evaluate(model, X_train, y_train)
         print(f"[Evaluation] eps: {eps[0]:.2f}, acc: {acc:.2f}, optimal RDP order: {eps[1]}, loss: {loss:.2f}")
 
 
