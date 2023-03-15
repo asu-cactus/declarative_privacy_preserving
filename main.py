@@ -14,19 +14,21 @@ import numpy as np
 from time import time
 
 def main(is_simple_data: bool = False):
-    # name_query = 'Alice Caine'
-    # datebirth = '1996-11-13'
-    # country = 'UK'
-    # picture_id = 2290 # we can link picture to its id.
+
 
     latency = 0.0
     message = "Elapsed time for query based on privacy preserving is {} seconds"
 
     # Query
-    name_query = 'Peter Derr'
-    datebirth = '1982-06-05'
+    name_query = 'Alice Caine'
+    datebirth = '1996-11-13'
     country = 'UK'
-    picture_id = 18 # we can link picture to its id.
+    picture_id = 14 # we can link picture to its id.
+
+    # name_query = 'Peter Derr'
+    # datebirth = '1982-06-05'
+    # country = 'UK'
+    # picture_id = 18 # we can link picture to its id.
  
     example_query = f"""
         SELECT img.location FROM virtual_surveillance_imgs img JOIN passengers ON match (passengers.pic, img) = True 

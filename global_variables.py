@@ -14,7 +14,7 @@ epochs = 70
 l2_norm_clip = 1
 noise_multiplier = 0.03
 
-sigma = 0.01
+sigma = 0.1
 clip = 0.5
 delta = 1e-5
 
