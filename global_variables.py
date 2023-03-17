@@ -7,14 +7,17 @@ hidden_units = 500
 frequency_range = 1
 training_size = 1000
 
-learning_rate = 0.2
+# learning_rate = 0.2
 batch_size = 200
-epochs = 70
+# epochs = 70
+learning_rate = 0.002
+epochs = 3000
 
 l2_norm_clip = 1
-noise_multiplier = 0.03
+# noise_multiplier = 0.03
+noise_multiplier = 0.3
 
-sigma = 0.1
+sigma = 0.01
 clip = 0.5
 delta = 1e-5
 
