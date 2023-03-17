@@ -17,7 +17,19 @@ from data_utils import (
 )
 from train import train_model, estimate_cost
 from test import evaluate
-from global_variables import date_range, frequency_range, sigma, clip, delta
+from global_variables import (
+    date_range, 
+    frequency_range, 
+    sigma, 
+    clip, 
+    delta, 
+    learning_rate,
+    epochs,
+    l2_norm_clip,
+    noise_multiplier,
+    batch_size,
+    delta,
+)
 
 
 def main(
@@ -25,7 +37,13 @@ def main(
     plan_number: str = None,
     **kwargs,
 ) -> tuple[float, float]:
-
+    if len(kwargs) == 0:
+        kwargs['learning_rate'] = learning_rate
+        kwargs['epochs']= epochs
+        kwargs['l2_norm_clip'] = l2_norm_clip
+        kwargs['noise_multiplier'] = noise_multiplier
+        kwargs['batch_size'] = batch_size
+        kwargs['delta'] = delta
     latency = 0.0
     message = "Elapsed time for query based on privacy preserving is {} seconds"
 
@@ -205,10 +223,10 @@ def find_pareto_frontier(noisy_type: str):
 
 
 if __name__ == '__main__':
-    # main(is_simple_data=True)
+    main(is_simple_data=True)
 
     # noisy_data_experiment()
     # find_pareto_frontier('noisy_data')
 
-    noisy_model_experiment()
-    find_pareto_frontier('noisy_model')
+    # noisy_model_experiment()
+    # find_pareto_frontier('noisy_model')
