@@ -1,4 +1,7 @@
 __pycache__/
+__MACOSX/
+.DS_Store
 experiment_results/
+face_database/
 
 privacy_budget_exp.py
