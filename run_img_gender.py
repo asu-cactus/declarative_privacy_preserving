@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import torch
 
+from itertools import product
 from time import time
 from pathlib import Path
 from PIL import Image
@@ -155,8 +156,86 @@ def main(
     print(f'Ground truth location is: {truth_label}')
     return (epsilon, acc) if plan_selection == '1' else (eps[0], acc)
 
+
+def noisy_data_experiment(is_append_results=True):
+    save_dir = Path("./experiment_results/noisy_data")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    save_path = save_dir.joinpath("results.csv")
+    sigmas = [0.1, 0.05, 0.01]
+    clips = [0.6, 0.5, 0.4]
+    deltas = [1e-5]
+    global sigma, clip, delta
+    
+    results = []
+    for s, c, d in product(sigmas, clips, deltas):
+        result = {'sigma': s, 'clip': c, 'delta': d}
+        sigma, clip, delta = s, c, d
+        epsilon, acc = main(plan_number='1')
+        result['epsilon'] = epsilon
+        result['acc'] = acc
+        results.append(result)
+    if is_append_results:
+        pd.concat([pd.read_csv(save_path), pd.DataFrame(results)]).to_csv(save_path, index=False)
+    else:
+        pd.DataFrame(results).to_csv(save_path, index=False)
+        
+
+def noisy_model_experiment(is_append_results=True):
+    save_dir = Path("./experiment_results/noisy_model")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    save_path = save_dir.joinpath("results.csv")
+
+    learning_rates = [0.001, 0.002]
+    batch_sizes = [100, 200]
+    epochss = [1000, 2000, 3000]
+    l2_norm_clips = [0.5, 1]
+    noise_multipliers = [1, 0.5, 0.3]
+    # deltas = [1e-4, 1e-5, 1e-6]
+    # learning_rates = [0.1]
+    # batch_sizes = [100, 200]
+    # epochss = [60]
+    # l2_norm_clips = [0.5, 1, 1.5]
+    # noise_multipliers = [0.03]
+    deltas = [1e-5]
+
+    results = []
+    for lr, b, e, l, n, d in product(learning_rates, batch_sizes, epochss, l2_norm_clips, noise_multipliers, deltas):
+        result = {
+            'learning_rate': lr,
+            'batch_size': b,
+            'epochs' : e,
+            'l2_norm_clip': l,
+            'noise_multiplier': n,
+            'delta': d,
+        }
+        epsilon, acc = main(plan_number='2', **result)
+        result['epsilon'] = epsilon
+        result['acc'] = acc
+        results.append(result)
+    if is_append_results:
+        pd.concat([pd.read_csv(save_path), pd.DataFrame(results)]).to_csv(save_path, index=False)
+    else:
+        pd.DataFrame(results).to_csv(save_path, index=False)
+
+def find_pareto_frontier(noisy_type: str):
+    assert noisy_type == 'noisy_data' or noisy_type == 'noisy_model'
+    df = pd.read_csv(f'./experiment_results/{noisy_type}/results.csv')
+    frontier_indices = []
+    for i, row in df.iterrows():
+        if not any((row['epsilon'] >= df.iloc[j]["epsilon"] and row['acc'] < df.iloc[j]['acc'] or
+                    row['epsilon'] > df.iloc[j]["epsilon"] and row['acc'] <= df.iloc[j]['acc'] for j in range(len(df)))):
+            frontier_indices.append(i)
+    df.iloc[frontier_indices].to_csv(f'./experiment_results/{noisy_type}/frontiers.csv')
+
+
 if __name__ == '__main__':
     # create_image_gender_dataset()
-    main()
+    # main()
+
+    noisy_data_experiment(is_append_results=True)
+    find_pareto_frontier('noisy_data')
+
+    # noisy_model_experiment(is_append_results=True)
+    # find_pareto_frontier('noisy_model')
     
     

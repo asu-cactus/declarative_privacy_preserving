@@ -159,12 +159,13 @@ def main(
     print(f'Ground truth location is: {truth_label}')
     return (epsilon, acc) if plan_selection == '1' else (eps[0], acc)
     
-def noisy_data_experiment():
+def noisy_data_experiment(is_append_results=True):
     save_dir = Path("./experiment_results/noisy_data")
     save_dir.mkdir(parents=True, exist_ok=True)
+    save_path = save_dir.joinpath("results.csv")
     sigmas = [0.1, 0.05, 0.01]
     clips = [0.6, 0.5, 0.4]
-    deltas = [1e-4, 1e-5, 1e-6]
+    deltas = [1e-5]
     global sigma, clip, delta
     
     results = []
@@ -175,25 +176,29 @@ def noisy_data_experiment():
         result['epsilon'] = epsilon
         result['acc'] = acc
         results.append(result)
-    pd.DataFrame(results).to_csv(save_dir.joinpath("results.csv"), index=False)
+    if is_append_results:
+        pd.concat([pd.read_csv(save_path), pd.DataFrame(results)]).to_csv(save_path, index=False)
+    else:
+        pd.DataFrame(results).to_csv(save_path, index=False)
+        
 
-    
-def noisy_model_experiment():
+def noisy_model_experiment(is_append_results=True):
     save_dir = Path("./experiment_results/noisy_model")
     save_dir.mkdir(parents=True, exist_ok=True)
+    save_path = save_dir.joinpath("results.csv")
 
-    learning_rates = [0.1, 0.2, 0.5]
-    batch_sizes = [50, 100, 200]
-    epochss = [60, 70, 80]
-    l2_norm_clips = [0.5, 1, 1.5]
-    noise_multipliers = [0.1, 0.05, 0.03]
-    deltas = [1e-4, 1e-5, 1e-6]
+    learning_rates = [0.001, 0.002]
+    batch_sizes = [100, 200]
+    epochss = [3000, 5000]
+    l2_norm_clips = [0.5, 1]
+    noise_multipliers = [1, 0.5, 0.3]
+    # deltas = [1e-4, 1e-5, 1e-6]
     # learning_rates = [0.1]
     # batch_sizes = [100, 200]
     # epochss = [60]
     # l2_norm_clips = [0.5, 1, 1.5]
     # noise_multipliers = [0.03]
-    # deltas = [1e-5]
+    deltas = [1e-5]
 
     results = []
     for lr, b, e, l, n, d in product(learning_rates, batch_sizes, epochss, l2_norm_clips, noise_multipliers, deltas):
@@ -209,7 +214,10 @@ def noisy_model_experiment():
         result['epsilon'] = epsilon
         result['acc'] = acc
         results.append(result)
-    pd.DataFrame(results).to_csv(save_dir.joinpath("results.csv"), index=False)
+    if is_append_results:
+        pd.concat([pd.read_csv(save_path), pd.DataFrame(results)]).to_csv(save_path, index=False)
+    else:
+        pd.DataFrame(results).to_csv(save_path, index=False)
 
 def find_pareto_frontier(noisy_type: str):
     assert noisy_type == 'noisy_data' or noisy_type == 'noisy_model'
@@ -223,10 +231,10 @@ def find_pareto_frontier(noisy_type: str):
 
 
 if __name__ == '__main__':
-    main(is_simple_data=True)
+    # main(is_simple_data=True)
 
-    # noisy_data_experiment()
+    # noisy_data_experiment(is_append_results=True)
     # find_pareto_frontier('noisy_data')
 
-    # noisy_model_experiment()
-    # find_pareto_frontier('noisy_model')
+    noisy_model_experiment(is_append_results=True)
+    find_pareto_frontier('noisy_model')

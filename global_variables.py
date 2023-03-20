@@ -1,17 +1,17 @@
 date_range = 365
-location_range = 2
+location_range = 20
 countries = ['UK', 'US', 'BRZ', 'CHN', 'AU']
 
 hidden_units = 500
 
 frequency_range = 1
-training_size = 2222
+training_size = 1000
 
 # learning_rate = 0.2
 batch_size = 200
 # epochs = 70
 learning_rate = 0.002
-epochs = 2000
+epochs = 70
 
 l2_norm_clip = 1
 # noise_multiplier = 0.03
