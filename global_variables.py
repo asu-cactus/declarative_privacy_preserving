@@ -1,5 +1,5 @@
 date_range = 365
-location_range = 20
+location_range = 2
 countries = ['UK', 'US', 'BRZ', 'CHN', 'AU']
 
 hidden_units = 500
@@ -7,9 +7,7 @@ hidden_units = 500
 frequency_range = 1
 training_size = 1000
 
-# learning_rate = 0.2
 batch_size = 200
-# epochs = 70
 learning_rate = 0.002
 epochs = 70
 

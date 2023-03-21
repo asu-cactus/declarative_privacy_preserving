@@ -203,3 +203,6 @@ def gaussian_noise_to_embeddings(
 
     epsilon = compute_privacy_budget(embeddings.shape[1], clip, delta, sigma)
     return (noisy_embeds, epsilon)
+
+if __name__ == '__main__':
+    print(compute_privacy_budget(512, 0.6, 1e-5, 0.04))
