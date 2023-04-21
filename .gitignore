@@ -3,5 +3,9 @@ __MACOSX/
 .DS_Store
 experiment_results/
 face_database/
+dataset/passenger_data/
 
+# Experiment codes
 privacy_budget_exp.py
+
+#

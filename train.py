@@ -15,7 +15,7 @@ from data_utils import (
     compute_privacy_budget,
 )
 from typings import *
-from global_variables import date_range, location_range, batch_size, noise_multiplier, epochs
+from global_variables import date_range, location_range, batch_size, noise_multiplier, epochs, hidden_units
 from sklearn.preprocessing import StandardScaler
 
 def _train(
@@ -25,6 +25,7 @@ def _train(
     loss_func: str = 'CategoricalCrossentropy',
     num_microbatches: int = 1,
     is_privacy_preserve: bool = True,
+    units: int = None,
     **kwargs
 ):
     learning_rate = kwargs['learning_rate']
@@ -33,6 +34,8 @@ def _train(
     noise_multiplier = kwargs['noise_multiplier']
     batch_size = kwargs['batch_size']
     delta = kwargs['delta']
+    if units is None:
+        units = hidden_units
     if batch_size % num_microbatches != 0:
         raise ValueError('Batch size should be an integer multiple of the number of microbatches')
     
@@ -47,11 +50,11 @@ def _train(
 
     # Define model and loss function
     if loss_func == 'CategoricalCrossentropy':
-        model = MySequentialModel(out_size=out_size)
+        model = MySequentialModel(out_size, units)
         loss = tf.keras.losses.CategoricalCrossentropy()
         model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
     elif loss_func == 'BinaryCrossentropy':
-        model = CrossProductOutputModel(out_size=out_size)
+        model = CrossProductOutputModel(out_size, units)
         loss = tf.keras.losses.BinaryCrossentropy()
         model.compile(optimizer=optimizer, loss=loss, metrics=[tf.keras.metrics.BinaryAccuracy()])
     else:
@@ -100,6 +103,7 @@ def _train_simple(
     location_data: list[int], 
     is_privacy_preserve: bool,
     out_size: int,
+    units: int,
     **kwargs
 ) -> tuple[TFModel, tuple[int], Embeddings, np.array, StandardScaler]:
     X_train, ids, y_train, sc = create_simple_trainset(embed_data, id_data, location_data)
@@ -109,12 +113,13 @@ def _train_simple(
         out_size=out_size,
         loss_func='CategoricalCrossentropy',
         is_privacy_preserve=is_privacy_preserve,
+        units=units,
         **kwargs)
     return (model, eps, X_train, y_train, sc)
 
-def train_model(embed_data, id_data, date_data, location_data, user_selection, is_privacy_preserve, out_size=location_range, **kwargs):
+def train_model(embed_data, id_data, date_data, location_data, user_selection, is_privacy_preserve, out_size=location_range, units=None, **kwargs):
     if date_data is None: # simple_data
-        return _train_simple(embed_data, id_data, location_data, is_privacy_preserve, out_size, **kwargs)
+        return _train_simple(embed_data, id_data, location_data, is_privacy_preserve, out_size, units, **kwargs)
     else:
         if user_selection == 'multi-output':
             return _train_multi_output_model(embed_data, id_data, date_data, location_data, is_privacy_preserve, **kwargs)

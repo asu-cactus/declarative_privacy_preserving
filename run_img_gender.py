@@ -125,12 +125,15 @@ def main(
     is_privacy_preserve = False if  plan_selection == '1' else True
     user_selection = 'single-output'
 
+    begin = time()
     model, eps, X_train, y_train, scaler = train_model(
         embed_input, id_data, date_data, gender_data, 
         user_selection=user_selection, 
         is_privacy_preserve=is_privacy_preserve,
         out_size=target_dim,
         **kwargs)
+    print(f'Training time is {time() - begin}')
+    model.summary()
 
     # Evaluate model
     print('\n\nEvaluation:')
@@ -150,8 +153,7 @@ def main(
     location_pred = model.predict(scaler.transform(np.expand_dims(embed_query, axis=0)))
     location_pred = np.argmax(location_pred, axis=1)
     location_pred += 1
-    latency += time() - begin
-    print(message.format(latency))
+    print(message.format(time() - begin))
     print(f'Predicted location is: {location_pred}')
     print(f'Ground truth location is: {truth_label}')
     return (epsilon, acc) if plan_selection == '1' else (eps[0], acc)
@@ -224,10 +226,10 @@ def find_pareto_frontier(noisy_type: str):
 
 if __name__ == '__main__':
     # create_image_gender_dataset()
-    # main()
+    main()
 
-    noisy_data_experiment(is_append_results=False)
-    find_pareto_frontier('noisy_data')
+    # noisy_data_experiment(is_append_results=False)
+    # find_pareto_frontier('noisy_data')
 
     # noisy_model_experiment(is_append_results=False)
     # find_pareto_frontier('noisy_model')

@@ -223,12 +223,40 @@ def find_pareto_frontier(noisy_type: str):
             frontier_indices.append(i)
     df.iloc[frontier_indices].to_csv(f'./experiment_results/{noisy_type}/frontiers.csv')
 
+def measure_naive_architecture_search_time():
+    embed_original, indices = get_embeddings() # Considered the query pictures
+    embed_data, id_data, location_data = synthesize_simple_database(embed_original)
+    date_data = None
+    kwargs = {}
+    kwargs['learning_rate'] = learning_rate
+    kwargs['epochs']= epochs
+    kwargs['l2_norm_clip'] = l2_norm_clip
+    kwargs['noise_multiplier'] = noise_multiplier
+    kwargs['batch_size'] = batch_size
+    kwargs['delta'] = delta
+
+    begin = time()
+    unitss = list(range(100, 1000, 10))
+    for units in unitss:
+        model, eps, X_train, y_train, scaler = train_model(
+            embed_data, id_data, date_data, location_data, 
+            user_selection='1', 
+            is_privacy_preserve=False,
+            units=units,
+            **kwargs)
+
+    end = time()
+    print(f'Elapsed time is {end - begin} seconds')
+        
 
 if __name__ == '__main__':
     # main(is_simple_data=True)
 
-    noisy_data_experiment(is_append_results=False)
-    find_pareto_frontier('noisy_data')
+    # noisy_data_experiment(is_append_results=False)
+    # find_pareto_frontier('noisy_data')
 
     # noisy_model_experiment(is_append_results=False)
     # find_pareto_frontier('noisy_model')
+
+
+    measure_naive_architecture_search_time()

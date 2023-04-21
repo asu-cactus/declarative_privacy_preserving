@@ -8,14 +8,14 @@ frequency_range = 1
 training_size = 1000
 
 batch_size = 200
-learning_rate = 0.002
+learning_rate = 0.02
 epochs = 70
 
 l2_norm_clip = 1
 # noise_multiplier = 0.03
 noise_multiplier = 0.5
 
-sigma = 0.01
+sigma = 0.1
 clip = 0.5
 delta = 1e-5
 
