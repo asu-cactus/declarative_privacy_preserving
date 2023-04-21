@@ -8,8 +8,8 @@ frequency_range = 1
 training_size = 1000
 
 batch_size = 200
-learning_rate = 0.02
-epochs = 70
+learning_rate = 0.002
+epochs = 3000
 
 l2_norm_clip = 1
 # noise_multiplier = 0.03

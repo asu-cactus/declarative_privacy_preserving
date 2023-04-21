@@ -1,11 +1,11 @@
 __pycache__/
 __MACOSX/
 .DS_Store
+.vscode/
 experiment_results/
 face_database/
 dataset/passenger_data/
 
 # Experiment codes
 privacy_budget_exp.py
-
-#
+api.py
