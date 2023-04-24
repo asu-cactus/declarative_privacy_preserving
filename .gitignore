@@ -8,3 +8,5 @@ dataset/passenger_data/
 
 # Experiment codes
 privacy_budget_exp.py
+create_dataset_with_embeds.py
+*_w_embed.csv

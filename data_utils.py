@@ -11,7 +11,7 @@ from datetime import date, timedelta
 import math
 
 # Set random seed
-SEED = 1433 
+SEED = 1433
 random.seed(SEED)
 
 
@@ -35,8 +35,9 @@ def get_passenger_database(
     # Synthesize passenger database
     for index in range(len(embed_original)):
         row = {"id": index}
-        row["name"] = names[index] # assume names are distinct
-        row["dob"] = str(test_date1 + timedelta(days=random.randrange(total_days)))  
+        row["name"] = names[index]  # assume names are distinct
+        row["dob"] = str(
+            test_date1 + timedelta(days=random.randrange(total_days)))
         row["country"] = random.choice(countries)
         # row["embed"] = embed_original[index]
         rows.append(row)
@@ -45,20 +46,21 @@ def get_passenger_database(
     print(database)
     return database
 
+
 def check_passenger_exist(
     passenger_data,
     name_query,
     datebirth,
     country,
-    picture_id,
 ):
     for i, row in passenger_data.iterrows():
-        if row['id'] == picture_id and row["name"] == name_query and row['dob'] == datebirth and row['country'] == country:
+        if row["name"] == name_query and row['dob'] == datebirth and row['country'] == country:
             return i
     return -1
 
+
 def get_embeddings(
-    path: str = 'dataset/embeddings/10K_encodings.pkl', 
+    path: str = 'dataset/embeddings/10K_encodings.pkl',
 ) -> tuple[list[Embedding], list[int]]:
     embeddings = pickle.load(open(path, 'rb'))
     size = training_size // frequency_range
@@ -71,15 +73,17 @@ def get_embeddings(
     embed_original = [embeddings[i] for i in indices]
     return (embed_original, indices)
 
+
 def transform_embedding(embedding: Embedding) -> Embedding:
     return embedding
 
+
 def synthesize_database(
     embed_original: list[Embedding],
-    is_transform: bool = True,  
+    is_transform: bool = True,
     is_fix_freq: bool = True,
 ) -> tuple[list[Embedding], list[int], list[int], list[int]]:
-    
+
     if is_fix_freq:
         embed_data, id_data = [], []
         date_data, location_data = [], []
@@ -100,13 +104,14 @@ def synthesize_database(
                     id_data.append(i)
                     date_data.append(random.randint(1, date_range))
                     location_data.append(random.randint(1, location_range))
-            
+
         else:
             embed_data = embed_original
             length = len(embed_data)
             id_data = [i for i in range(length)]
             date_data = [random.randint(1, date_range) for _ in range(length)]
-            location_data = [random.randint(1, location_range) for _ in range(length)]
+            location_data = [random.randint(
+                1, location_range) for _ in range(length)]
 
     return (embed_data, id_data, date_data, location_data)
 
@@ -116,10 +121,11 @@ def standardize_input(X_train: Embeddings) -> tuple[Embeddings, StandardScaler]:
     sc.fit(X_train)
     return (sc.transform(X_train), sc)
 
+
 def create_multi_output_trainset(
-    embed_data: Embeddings, 
-    id_data: list[int], 
-    date_data: list[int], 
+    embed_data: Embeddings,
+    id_data: list[int],
+    date_data: list[int],
     location_data: list[int],
 ) -> tuple[Embeddings, np.array, np.array]:
     # Need rewrite
@@ -142,10 +148,11 @@ def create_multi_output_trainset(
     X_train, sc = standardize_input(np.stack(embed_data_dedup))
     return (X_train, np.arange(length), labels, sc)
 
-def create_multi_input_trainset(    
-    embed_data: Embeddings, 
-    id_data: list[int], 
-    date_data: list[int], 
+
+def create_multi_input_trainset(
+    embed_data: Embeddings,
+    id_data: list[int],
+    date_data: list[int],
     location_data: list[int],
     is_onehot_encode: bool = True,
 ):
@@ -157,7 +164,8 @@ def create_multi_input_trainset(
     # Create X_train
     date_data = np.array(date_data)
     if is_onehot_encode:
-        date_data_array = np.zeros((len(date_data), date_range), dtype=np.int32)
+        date_data_array = np.zeros(
+            (len(date_data), date_range), dtype=np.int32)
         date_data_array[np.arange(len(date_data)), date_data - 1] = 1
     else:
         date_data_array = np.expand_dims(date_data, axis=1)
@@ -168,17 +176,20 @@ def create_multi_input_trainset(
 
 def synthesize_simple_database(embed_original: list[Embedding]):
     assert frequency_range == 1
-    location_data = [random.randint(1, location_range) for _ in range(len(embed_original))]
+    location_data = [random.randint(1, location_range)
+                     for _ in range(len(embed_original))]
     id_data = list(range(len(location_data)))
     return (embed_original, id_data, location_data)
 
-def create_simple_trainset(    
-    embed_data: Embeddings, 
-    id_data: list[int], 
+
+def create_simple_trainset(
+    embed_data: Embeddings,
+    id_data: list[int],
     label_list: list[int],
 ) -> tuple[Embeddings, np.array, np.array]:
     label_array = np.array(label_list)
-    labels = np.zeros((len(label_list), len(np.unique(label_array))), dtype=np.int32)
+    labels = np.zeros((len(label_list), len(
+        np.unique(label_array))), dtype=np.int32)
     labels[np.arange(len(label_list)), label_array - 1] = 1
 
     X_train, sc = standardize_input(embed_data)
@@ -189,6 +200,7 @@ def compute_privacy_budget(dims, clip, delta, sigma):
     l2_sensitivity = math.sqrt(dims * (2 * abs(clip)) ** 2)
     epsilon = math.sqrt(2 * math.log(1.25 / delta)) * l2_sensitivity / sigma
     return epsilon
+
 
 def gaussian_noise_to_embeddings(
     embeddings: Embeddings,
@@ -203,6 +215,7 @@ def gaussian_noise_to_embeddings(
 
     epsilon = compute_privacy_budget(embeddings.shape[1], clip, delta, sigma)
     return (noisy_embeds, epsilon)
+
 
 if __name__ == '__main__':
     print(compute_privacy_budget(512, 0.6, 1e-5, 0.04))

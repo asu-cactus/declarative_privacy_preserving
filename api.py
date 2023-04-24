@@ -16,47 +16,33 @@ from global_variables import (
     sigma,
     clip,
     delta,
-    learning_rate,
-    epochs,
-    l2_norm_clip,
-    noise_multiplier,
-    batch_size,
-    delta,
+    airport_locations
 )
 
 
 def run(
-    learning_rate,
-    epochs,
-    l2_norm_clip,
-    noise_multiplier,
-    batch_size,
-    delta,
-    units
-) -> tuple[float, float]:
+    name_query='Peter Derr',
+    datebirth='1982-06-05',
+    country='UK',
+    # batch_size=200,
+    # learning_rate=0.002,
+    # epochs=3000,
+    # l2_norm_clip=1,
+    # noise_multiplier=0.3,
+    # delta=1e-5,
+    # units=500,
+    **kwargs
+):
+    # kwargs['batch_size'] = batch_size
 
-    kwargs = {
-        'learning_rate': learning_rate,
-        'epochs': epochs,
-        'l2_norm_clip': l2_norm_clip,
-        'noise_multiplier': noise_multiplier,
-        'batch_size': batch_size,
-        'delta': delta,
-        'units': units
-    }
     latency = 0.0
     message = "Elapsed time for query based on privacy preserving is {} seconds"
 
     # Query
-    name_query = 'Alice Caine'
-    datebirth = '1996-11-13'
-    country = 'UK'
-    picture_id = 14  # we can link picture to its id.
-
-    # name_query = 'Peter Derr'
-    # datebirth = '1982-06-05'
+    # name_query = 'Alice Caine'
+    # datebirth = '1996-11-13'
     # country = 'UK'
-    # picture_id = 18 # we can link picture to its id.
+    # picture_id = 14  # we can link picture to its id.
 
     example_query = f"""
         SELECT img.location FROM virtual_surveillance_imgs img JOIN passengers ON match (passengers.pic, img) = True 
@@ -79,7 +65,7 @@ def run(
     passenger_data = get_passenger_database(embed_original)
     begin = time()
     query_image_index = check_passenger_exist(
-        passenger_data, name_query, datebirth, country, picture_id)
+        passenger_data, name_query, datebirth, country)
     latency += time() - begin
     if query_image_index == -1:
         print(message.format(latency))
@@ -112,11 +98,14 @@ def run(
     is_privacy_preserve = False if plan_selection == '1' else True
     user_selection = 'single-output'
 
+    begin = time()
     model, eps, X_train, y_train, scaler = train_model(
         embed_input, id_data, date_data, location_data,
         user_selection=user_selection,
         is_privacy_preserve=is_privacy_preserve,
         **kwargs)
+    training_latency = time() - begin
+    print(f'Traing latency is: {training_latency}')
 
     # Evaluate model
     print('\n\nEvaluation:')
@@ -139,20 +128,40 @@ def run(
         np.expand_dims(embed_query, axis=0)))
     location_pred = np.argmax(location_pred, axis=1)
 
-    location_pred += 1
     latency += time() - begin
     print(message.format(latency))
     print(f'Predicted location is: {location_pred}')
     print(f'Ground truth location is: {truth_label}')
-    return (epsilon, acc) if plan_selection == '1' else (eps[0], acc)
+
+    # Return values
+    if plan_selection == '1':
+        epsilon = eps[0]
+    location_str = airport_locations[location_pred.item(
+    ) // len(airport_locations)]
+    return {
+        'privacy_budget': epsilon,
+        'accuracy': acc,
+        'location': f'Location{location_pred}: {location_str}',
+        'training_latency': training_latency,
+        'prediction_latency': latency,
+    }
 
 
 if __name__ == '__main__':
-    run(
-        learning_rate=0.02,
-        epochs=70,
+    # result = run(
+    #     name_query='Alice Caine',
+    #     datebirth='1996-11-13',
+    #     country='UK'
+    # )
+
+    result = run(
+        batch_size=100,
+        learning_rate=0.002,
+        epochs=3000,
         l2_norm_clip=1,
-        noise_multiplier=0.3,
-        batch_size=200,
+        noise_multiplier=0.5,
         delta=1e-5,
-        units=500)
+        units=500,
+    )
+
+    print(result)

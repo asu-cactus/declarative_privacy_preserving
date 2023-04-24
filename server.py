@@ -1,17 +1,31 @@
 from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
+from flask_cors import CORS
 import pandas as pd
-import ast
+import random
 from api import run
+
+
+# def run(
+#     learning_rate,
+#     epochs,
+#     l2_norm_clip,
+#     noise_multiplier,
+#     batch_size,
+#     delta,
+#     units
+# ) -> tuple[float, float]:
+#     return tuple[random.randint(0, 100), random.randint(0, 100)]
+
 
 app = Flask(__name__)
 api = Api(app)
+CORS(app)
 
 
 class Users(Resource):
     def get(self):
-        data = pd.read_csv('users.csv')  # read CSV
-        data = data.to_dict()  # convert dataframe to dictionary
+        data = "INFORMATION FROM HONG"
         return {'data': data}, 200  # return data and 200 OK code
 
 
@@ -23,17 +37,21 @@ class Locations(Resource):
 
     def post(self):
         schema_parameters = request.get_json()
-        learning_rate = schema_parameters['learning_rate']
-        epochs = schema_parameters['epochs']
-        l2_norm_clip = schema_parameters['l2_norm_clip']
-        noise_multiplier = schema_parameters['noise_multiplier']
-        batch_size = schema_parameters['batch_size']
-        delta = schema_parameters['delta']
-        unit = schema_parameters['units']
-        result = run(learning_rate, epochs, l2_norm_clip,
-                     noise_multiplier, batch_size, delta, unit)
-
-        return {'data': result}, 200
+        print(f'Parameters from frontend:\n{schema_parameters}')
+        # learning_rate = schema_parameters['learning_rate']
+        # epochs = schema_parameters['epochs']
+        # l2_norm_clip = schema_parameters['l2_norm_clip']
+        # noise_multiplier = schema_parameters['noise_multiplier']
+        # batch_size = schema_parameters['batch_size']
+        # delta = schema_parameters['delta']
+        # unit = schema_parameters['units']
+        # result = run(learning_rate, epochs, l2_norm_clip,
+        #              noise_multiplier, batch_size, delta, unit)
+        results = run(**schema_parameters)
+        print(f'Results:\n{results}')
+        return {'data': results}, 200
+        # return {'data': {'location': 'Food Court, Phoenix Sky Harbor Airport', 'privacy_budget': '5342',
+        #                  'accuracy': '27.8%'}}, 200
 
 
 api.add_resource(Users, '/users')  # '/users' is our entry point for Users
